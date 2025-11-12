@@ -6,7 +6,7 @@ import io
 import spacy
 import pprint
 from spacy.matcher import Matcher
-from . import utils
+import utils.custom_utils as utils
 import re
 
 class ResumeParser(object):
@@ -34,6 +34,7 @@ class ResumeParser(object):
             'company_names': None,
             'no_of_pages': None,
             'total_experience': None,
+            'suggestions': None,  # <-- added field to hold CV improvement suggestions
         }
         self.__resume = resume
         if not isinstance(self.__resume, io.BytesIO):
@@ -122,6 +123,23 @@ class ResumeParser(object):
         self.__details['no_of_pages'] = utils.get_number_of_pages(
                                             self.__resume
                                         )
+
+        # Build a minimal CV dict and request improvement suggestions
+        cv_data = {
+            "name": self.__details.get("name"),
+            "email": self.__details.get("email"),
+            "phone": self.__details.get("mobile_number"),
+            "education": self.__details.get("education") or [],
+            "skills": self.__details.get("skills") or [],
+            "experience": self.__details.get("experience") or [],
+            "projects": [],      # not extracted here, keep empty
+            "languages": []      # not extracted here, keep empty
+        }
+        try:
+            self.__details['suggestions'] = utils.suggest_cv_improvements(cv_data)
+        except Exception:
+            # ensure parser doesn't fail if suggestions helper has issues
+            self.__details['suggestions'] = None
         return
 
 
